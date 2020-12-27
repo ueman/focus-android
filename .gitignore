@@ -52,7 +52,6 @@ l10n-repo/
 infer-out/
 
 # Screenshots
-fastlane/
 Screengrabfile
 
 # Adjust token file
@@ -61,3 +60,5 @@ Screengrabfile
 # Sentry token file
 .sentry_token
 
+fastlane/report.xml
+fastlane/README.md

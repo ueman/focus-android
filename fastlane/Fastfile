@@ -1,0 +1,63 @@
+# Requirements:
+#   - Dieses Skript muss auf auf macOS ausgefuehrt werden
+#   - ImageOptim muss auf diesem macOS installiert sein
+
+lane :test do
+    gradle(task: "dependencyUpdates -DoutputFormatter=json -DoutputDir=.")
+end
+
+desc "Run dp"
+lane :run_dp do
+    # linting
+    gradle(task: "lint")
+
+    # Dependency check
+    dependencyCheck
+
+    # unit tests
+    gradle(task: "testFocusAarch64NightlyUnitTest")
+
+    # bauen
+    gradle(task: "clean assembleRelease")
+
+    # Dateigroesse optimieren durch Image Crunching
+    size_optimization
+
+    # size check
+    size_check
+
+    # on device tests
+    gradle(task: "connectedFocusAarch64DebugAndroidTest")
+
+    # Der folgende Schritt lädt die App in den Google Play Store
+    # upload_to_play_store
+end
+
+lane :dependencyCheck do
+    # Dependency check
+    # https://github.com/ben-manes/gradle-versions-plugin
+    gradle(task: "dependencyUpdates -DoutputFormatter=json -DoutputDir=.")
+    content = load_json(json_path: "./report.json")
+    begin
+        outOfDateCount = content["outdated"]["count"].to_i
+        if outOfDateCount > 60
+            UI.user_error!("To many out of date libraries")
+        else
+            UI.message("No out of date libraries")
+        end
+    rescue
+        UI.message("No out of date libraries")
+    end
+end
+
+lane :size_optimization do
+    size = sh '/Applications/ImageOptim.app/Contents/MacOS/ImageOptim ../app/src/'
+end
+
+lane :size_check do
+    # size check
+    size = sh 'apkanalyzer apk file-size ../app/build/outputs/apk/focusAarch64/release/app-focus-aarch64-release-unsigned.apk'
+    if size.to_i > 70000000
+         UI.user_error!("File size to big")
+    end
+end
