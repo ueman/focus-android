@@ -2,14 +2,9 @@
 #   - Dieses Skript muss auf auf macOS ausgefuehrt werden
 #   - ImageOptim muss auf diesem macOS installiert sein
 
-lane :test do
-    gradle(task: "dependencyUpdates -DoutputFormatter=json -DoutputDir=.")
-end
-
 desc "Run dp"
 lane :run_dp do
-    # linting
-    gradle(task: "lint")
+    lint
 
     # Dependency check
     dependencyCheck
@@ -17,20 +12,27 @@ lane :run_dp do
     # unit tests
     gradle(task: "testFocusAarch64NightlyUnitTest")
 
-    # bauen
-    gradle(task: "clean assembleRelease")
+    # on device tests
+    gradle(task: "connectedFocusAarch64DebugAndroidTest")
 
     # Dateigroesse optimieren durch Image Crunching
     size_optimization
 
+    # bauen
+    gradle(task: "clean assembleRelease")
+
     # size check
     size_check
 
-    # on device tests
-    gradle(task: "connectedFocusAarch64DebugAndroidTest")
-
     # Der folgende Schritt lädt die App in den Google Play Store
     # upload_to_play_store
+end
+
+lane :lint do
+    # linting
+    gradle(task: "ktlint")
+    gradle(task: "detektCheck")
+    gradle(task: "lintFocusAarch64Debug")
 end
 
 lane :dependencyCheck do
